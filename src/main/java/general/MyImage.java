@@ -4,7 +4,9 @@ import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.net.URL;
 
 public class MyImage {
 
@@ -12,15 +14,25 @@ public class MyImage {
     private int[][][] pixels;
 
     public MyImage(String path) throws IOException {
-        this.img = ImageIO.read(new File(path));
+        this.img = ImageIO.read(GetImg(path));
         this.pixels = getRawPixels();
     }
 
     private MyImage(BufferedImage img) {
         this.img = img;
+        this.pixels = getRawPixels();
     }
 
-    public int[][][] getRawPixels() {
+    private File GetImg(String name) throws FileNotFoundException{
+        ClassLoader classLoader = getClass().getClassLoader();
+        URL response = classLoader.getResource(name);
+        if (response == null) {
+            throw new FileNotFoundException(name + " not found");
+        }
+        return new File(response.getFile());
+    }
+
+    private int[][][] getRawPixels() {
         int w = img.getWidth();
         int h = img.getHeight();
         int[][][] pixels = new int[w][h][3];
@@ -28,15 +40,12 @@ public class MyImage {
         for(int i = 0; i < w; i++) {
             for(int j = 0; j < h; j++) {
                 int pixel = img.getRGB(i, j);
-                //System.out.println(pixel);
 
-                Color mycolor = new Color(img.getRGB(i, j));
-                //System.out.println(mycolor.getRed());
-
+                //Color mycolor = new Color(img.getRGB(i, j));
                 int red = (pixel >> 16) & 0xff;
-                //System.out.println(red);
                 int green = (pixel >> 8) & 0xff;
                 int blue = (pixel) & 0xff;
+
                 pixels[i][j][0] = red;
                 pixels[i][j][1] = green;
                 pixels[i][j][2] = blue;
@@ -67,6 +76,7 @@ public class MyImage {
     private int createPixel(int i, int j, int index, int[] symbols) {
 
         int p = 0;
+        int[] px = new int[3];
 
         for (int k=0; k < 3; k++) {
             int color;
@@ -78,10 +88,16 @@ public class MyImage {
                 color = (pixels[i][j][k] & 0xfc) | symbols[index];
             }
             index++;
-            // add color to pixel
-            p = p | (color << (16-8*k));
-        }
 
+            px[k] = color;
+            if (k == 0) {
+                p = (color << 24) | color << (16-8*k);
+            } else {
+                p = p | (color << (16-8*k));
+            }
+
+        }
+        int rgb = new Color(px[0], px[1], px[2]).getRGB();
         return p;
     }
 
@@ -122,8 +138,16 @@ public class MyImage {
                 newImage.setRGB(i, j, p);
             }
         }
-
         return new MyImage(newImage);
+    }
+
+    public String decode(String line) {
+        int first = pixels[0][0][0];
+        int sec = pixels[0][0][1] & 0x3;
+        int third = pixels[0][0][2] & 0x3;
+
+
+        return line;
     }
 
     public void save(String path) throws IOException {
