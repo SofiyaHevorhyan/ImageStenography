@@ -6,8 +6,8 @@ import java.util.Scanner;
 public class Main {
     public static void main(String[] args) throws IOException {
         String inName = "img/cat.jpg";
-        String outName = "your-path-here/img/greCat.jpg";
-        String outName2 = "your-path-here/img/encodedCat.jpg";
+        String outName = "your-path-here/src/main/resources/img/greyCat.jpg";
+        String outName2 = "your-path-here/src/main/resources/img/encodedCat.jpg";
 
         System.out.println("Please, type message. Only in ascii, less then 256 symbols: ");
         Scanner sc = new Scanner(System.in);
@@ -16,17 +16,15 @@ public class Main {
             System.out.println("Invalid length. Try again");
             message = sc.next();
         }
-        String line = message;
-
 
         MyImage img = new MyImage(inName);
         img.toGray().save(outName);
         System.out.println("Creating a monochrome image of cat.jpg");
 
-        MyImage mg2 = img.encode(line);
+        MyImage mg2 = img.encode(message);
         mg2.save(outName2);
-        System.out.format("Message %s has been encoded in encodedCat.jpg\n", message);
+        System.out.format("Message '%s' has been encoded in encodedCat.jpg\n", message);
 
-        System.out.format("We decode the message: %s", mg2.decode(line));
+        System.out.format("We decode the message: %s", mg2.decode());
     }
 }

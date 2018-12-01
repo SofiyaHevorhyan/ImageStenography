@@ -12,14 +12,22 @@ public class MyImage {
 
     private BufferedImage img;
     private int[][][] pixels;
+    private int w;
+    private int h;
 
     public MyImage(String path) throws IOException {
         this.img = ImageIO.read(GetImg(path));
-        this.pixels = getRawPixels();
+        otherArgs();
     }
 
     private MyImage(BufferedImage img) {
         this.img = img;
+        otherArgs();
+    }
+
+    private void otherArgs() {
+        this.w = img.getWidth();
+        this.h = img.getHeight();
         this.pixels = getRawPixels();
     }
 
@@ -33,15 +41,12 @@ public class MyImage {
     }
 
     private int[][][] getRawPixels() {
-        int w = img.getWidth();
-        int h = img.getHeight();
         int[][][] pixels = new int[w][h][3];
 
         for(int i = 0; i < w; i++) {
             for(int j = 0; j < h; j++) {
                 int pixel = img.getRGB(i, j);
 
-                //Color mycolor = new Color(img.getRGB(i, j));
                 int red = (pixel >> 16) & 0xff;
                 int green = (pixel >> 8) & 0xff;
                 int blue = (pixel) & 0xff;
@@ -55,8 +60,6 @@ public class MyImage {
     }
 
     public MyImage toGray() {
-        int w = img.getWidth();
-        int h = img.getHeight();
         BufferedImage grayImg = new BufferedImage(w, h, BufferedImage.TYPE_INT_RGB);
 
         for(int i = 0; i < w; i++) {
@@ -76,7 +79,6 @@ public class MyImage {
     private int createPixel(int i, int j, int index, int[] symbols) {
 
         int p = 0;
-        int[] px = new int[3];
 
         for (int k=0; k < 3; k++) {
             int color;
@@ -89,21 +91,13 @@ public class MyImage {
             }
             index++;
 
-            px[k] = color;
-            if (k == 0) {
-                p = (color << 24) | color << (16-8*k);
-            } else {
                 p = p | (color << (16-8*k));
-            }
 
         }
-        int rgb = new Color(px[0], px[1], px[2]).getRGB();
         return p;
     }
 
     public MyImage encode(String message) {
-        int w = img.getWidth();
-        int h = img.getHeight();
         BufferedImage newImage = new BufferedImage(w, h, BufferedImage.TYPE_INT_RGB);
 
         int len = 4*message.length();
@@ -141,13 +135,31 @@ public class MyImage {
         return new MyImage(newImage);
     }
 
-    public String decode(String line) {
-        int first = pixels[0][0][0];
-        int sec = pixels[0][0][1] & 0x3;
-        int third = pixels[0][0][2] & 0x3;
+    public String decode() {
+        int messageLen = pixels[0][0][0];
+        int index = 1;
 
+        StringBuilder message = new StringBuilder();
 
-        return line;
+        while (index <= messageLen) {
+            message.append(getLetter(index));
+            index += 4;
+        }
+
+        return message.toString();
+    }
+
+    private String getLetter(int index) {
+        int letter = 0;
+        int i=0, j=0;
+
+        for (int k=0; k < 4; k++) {
+            int code = pixels[i + index/w][(index/3) % w + j][index % 3] & 0x3;
+            letter = letter | (code << (6-2*k));
+            index++;
+        }
+
+        return Character.toString((char) letter);
     }
 
     public void save(String path) throws IOException {
